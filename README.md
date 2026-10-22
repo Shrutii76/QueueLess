@@ -108,29 +108,3 @@ Socket.IO will be used to communicate queue changes between authorized customer 
 | API Testing | Postman |
 | Testing | Vitest, Supertest, React Native Testing Library |
 
-## System Architecture
-
-QueueLess follows a client-server architecture with a modular backend.
-
-```text
-Customer App ───────┐
-                    │
-Business Owner App ─┼── REST API ── Express.js Backend
-                    │                      │
-Business Staff App ─┘                      ├── Authentication
-                                           ├── Business Management
-             Socket.IO ◄───────────────────┤── Queue Management
-                                           ├── Analytics
-                                           └── Notifications
-                                                  │
-                                               MongoDB
-```
-
-### Architecture Principles
-
-- MongoDB is the persistent source of truth.
-- The backend validates permissions and queue operations.
-- Socket.IO delivers real-time updates to authorized clients.
-- Queue token allocation must be safe under concurrent requests.
-- Push notifications provide alerts but do not determine queue state.
-- The mobile application must not contain database credentials or server signing secrets.
