@@ -5,6 +5,8 @@ import mongoose from "mongoose";
 
 import authRoutes from "./modules/auth/auth.routes.js";
 import { errorHandler } from "./middleware/error-handler.js";
+import businessRoutes from "./modules/businesses/business.routes.js";
+import queueRoutes from "./modules/queues/queue.routes.js";
 
 const app = express();
 
@@ -59,6 +61,7 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
 
 // Authentication routes
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/businesses", businessRoutes);
 
 // 404 handler
 app.use((_req, res) => {

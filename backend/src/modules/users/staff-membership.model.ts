@@ -1,26 +1,23 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-export const STAFF_PERMISSIONS = {
-  VIEW_QUEUE: "VIEW_QUEUE",
-  CALL_NEXT: "CALL_NEXT",
-  UPDATE_ENTRY: "UPDATE_ENTRY",
-  PAUSE_QUEUE: "PAUSE_QUEUE",
-  MANAGE_QR: "MANAGE_QR",
-  VIEW_ANALYTICS: "VIEW_ANALYTICS",
-} as const;
+export const STAFF_PERMISSIONS = [
+  "VIEW_QUEUE",
+  "CALL_NEXT",
+  "UPDATE_ENTRY",
+  "PAUSE_QUEUE",
+  "MANAGE_QR",
+  "VIEW_ANALYTICS",
+] as const;
 
-export type StaffPermission =
-  (typeof STAFF_PERMISSIONS)[keyof typeof STAFF_PERMISSIONS];
+export type StaffPermission = (typeof STAFF_PERMISSIONS)[number];
 
 export interface IStaffMembership extends Document {
-  user: Types.ObjectId;
-  business: Types.ObjectId;
+  user: mongoose.Types.ObjectId;
+  business: mongoose.Types.ObjectId;
   permissions: StaffPermission[];
-  status: "ACTIVE" | "INACTIVE" | "INVITED";
-  invitedBy: Types.ObjectId;
+  status: "INVITED" | "ACTIVE" | "INACTIVE";
+  invitedBy: mongoose.Types.ObjectId;
   joinedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 const staffMembershipSchema = new Schema<IStaffMembership>(
@@ -39,13 +36,13 @@ const staffMembershipSchema = new Schema<IStaffMembership>(
 
     permissions: {
       type: [String],
-      enum: Object.values(STAFF_PERMISSIONS),
-      default: [STAFF_PERMISSIONS.VIEW_QUEUE],
+      enum: STAFF_PERMISSIONS,
+      default: ["VIEW_QUEUE"],
     },
 
     status: {
       type: String,
-      enum: ["ACTIVE", "INACTIVE", "INVITED"],
+      enum: ["INVITED", "ACTIVE", "INACTIVE"],
       default: "INVITED",
     },
 
@@ -61,14 +58,10 @@ const staffMembershipSchema = new Schema<IStaffMembership>(
   },
   {
     timestamps: true,
-    versionKey: false,
   },
 );
 
-// A staff account can have only one membership per business.
 staffMembershipSchema.index({ user: 1, business: 1 }, { unique: true });
-
-staffMembershipSchema.index({ business: 1, status: 1 });
 
 const StaffMembership = mongoose.model<IStaffMembership>(
   "StaffMembership",

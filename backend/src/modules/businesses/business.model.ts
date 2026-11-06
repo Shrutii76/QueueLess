@@ -22,6 +22,7 @@ export interface IBusiness extends Document {
   };
 
   services: {
+    _id: any;
     name: string;
     description?: string;
     duration: number;

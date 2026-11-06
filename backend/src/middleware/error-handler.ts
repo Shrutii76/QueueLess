@@ -1,65 +1,52 @@
 import type { Request, Response, NextFunction } from "express";
-import mongoose from "mongoose";
+
+import { AppError } from "../utils/app-error.js";
 
 export const errorHandler = (
-  error: any,
+  error: unknown,
   _req: Request,
   res: Response,
   _next: NextFunction,
-): void => {
+) => {
   console.error("API Error:", error);
 
-  if (error instanceof mongoose.Error.ValidationError) {
-    res.status(400).json({
-      success: false,
-      message: "Database validation failed",
-      errors: Object.values(error.errors).map((item) => item.message),
-    });
-    return;
-  }
-
-  if (error?.code === 11000) {
-    res.status(409).json({
-      success: false,
-      message: "An account with these details already exists",
-    });
-    return;
-  }
-
-  if (error.message === "An account with these details already exists") {
-    res.status(409).json({
+  if (error instanceof AppError) {
+    return res.status(error.statusCode).json({
       success: false,
       message: error.message,
     });
-    return;
   }
 
-  if (error.message === "Invalid email/phone or password") {
-    res.status(401).json({
+  const err = error as {
+    code?: number;
+    name?: string;
+    message?: string;
+    keyPattern?: Record<string, unknown>;
+  };
+
+  if (err.code === 11000) {
+    return res.status(409).json({
       success: false,
-      message: error.message,
+      message: "A record with these details already exists.",
     });
-    return;
   }
 
-  if (error.message === "Your account is inactive") {
-    res.status(403).json({
+  if (err.name === "ValidationError") {
+    return res.status(400).json({
       success: false,
-      message: error.message,
+      message: err.message,
     });
-    return;
   }
 
-  if (error.message === "User account not found or inactive") {
-    res.status(404).json({
+  if (err.name === "CastError") {
+    return res.status(400).json({
       success: false,
-      message: error.message,
+      message: "Invalid ID or value provided.",
     });
-    return;
   }
 
-  res.status(500).json({
+  return res.status(500).json({
     success: false,
-    message: "Internal server error",
+    message: "Internal server error.",
   });
 };
