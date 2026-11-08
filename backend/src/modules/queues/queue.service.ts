@@ -2,7 +2,10 @@ import mongoose from "mongoose";
 
 import Queue from "./queue.model.js";
 import Business from "../businesses/business.model.js";
+
 import { AppError } from "../../utils/app-error.js";
+import { emitQueueEvent } from "../../sockets/socket.js";
+import { SOCKET_EVENTS } from "../../sockets/socket-events.js";
 
 import type { CreateQueueInput, UpdateQueueInput } from "./queue.validation.js";
 
@@ -66,7 +69,6 @@ export const createQueue = async (
 
     return queue;
   } catch (error) {
-    // Unique index: one queue per business/service/date.
     if (
       error instanceof mongoose.mongo.MongoServerError &&
       error.code === 11000
@@ -183,6 +185,17 @@ export const updateQueue = async (
 
   await queue.save();
 
+  emitQueueEvent(queueId, businessId, SOCKET_EVENTS.SNAPSHOT_UPDATED, {
+    queueId,
+    businessId,
+    status: queue.status,
+    maxCapacity: queue.maxCapacity,
+    estimatedServiceMinutes: queue.estimatedServiceMinutes,
+    allowOnlineJoining: queue.allowOnlineJoining,
+    lastTokenNumber: queue.lastTokenNumber,
+    currentTokenNumber: queue.currentTokenNumber,
+  });
+
   return queue;
 };
 
@@ -208,8 +221,16 @@ export const updateQueueStatus = async (
     throw new AppError("This queue is already closed.", 409);
   }
 
+  if (status === queue.status) {
+    throw new AppError(`Queue is already ${status.toLowerCase()}.`, 409);
+  }
+
   if (status === "OPEN" && queue.status !== "PAUSED") {
     throw new AppError("Only paused queues can be reopened.", 409);
+  }
+
+  if (status === "PAUSED" && queue.status !== "OPEN") {
+    throw new AppError("Only open queues can be paused.", 409);
   }
 
   if (status === "CLOSED") {
@@ -219,6 +240,16 @@ export const updateQueueStatus = async (
   queue.status = status;
 
   await queue.save();
+
+  const payload = {
+    queueId: queue._id.toString(),
+    businessId: queue.business.toString(),
+    status: queue.status,
+    closedAt: queue.closedAt,
+    allowOnlineJoining: queue.allowOnlineJoining,
+  };
+
+  emitQueueEvent(queueId, businessId, SOCKET_EVENTS.STATUS_UPDATED, payload);
 
   return queue;
 };

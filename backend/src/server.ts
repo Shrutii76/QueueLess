@@ -1,14 +1,17 @@
 import "dotenv/config";
 
 import http from "node:http";
+import mongoose from "mongoose";
+
 import app from "./app.js";
 import { connectDatabase } from "./config/database.js";
+import { initializeSocket } from "./sockets/socket.js";
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 8000;
 
 const startServer = async (): Promise<void> => {
   try {
-    // Validate environment variables
+    // Validate environment variables.
     if (!process.env.MONGODB_URI) {
       throw new Error("MONGODB_URI is missing in .env");
     }
@@ -17,13 +20,16 @@ const startServer = async (): Promise<void> => {
       throw new Error("JWT_SECRET is missing in .env");
     }
 
-    // Connect to MongoDB
+    // Connect to MongoDB.
     await connectDatabase();
 
-    // Create HTTP server
+    // Create HTTP server.
     const server = http.createServer(app);
 
-    // Start server
+    // Initialize Socket.IO on the same HTTP server.
+    initializeSocket(server);
+
+    // Start server.
     server.listen(PORT, () => {
       console.log("-----------------------------------");
       console.log("🚀 QueueLess Backend Started");
@@ -31,23 +37,22 @@ const startServer = async (): Promise<void> => {
       console.log(`Server: http://localhost:${PORT}`);
       console.log(`Health: http://localhost:${PORT}/api/v1/health`);
       console.log("Database: MongoDB Connected");
+      console.log("Socket.IO: Initialized");
       console.log("-----------------------------------");
     });
 
-    // Handle unexpected server errors
+    // Handle unexpected server errors.
     server.on("error", (error) => {
       console.error("HTTP Server Error:", error);
       process.exit(1);
     });
 
-    // Graceful shutdown
+    // Graceful shutdown.
     const shutdown = async () => {
       console.log("Shutting down QueueLess server...");
 
       server.close(async () => {
-        await import("mongoose").then(({ default: mongoose }) =>
-          mongoose.disconnect(),
-        );
+        await mongoose.disconnect();
 
         console.log("Server stopped successfully");
         process.exit(0);

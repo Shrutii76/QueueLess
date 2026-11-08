@@ -7,6 +7,9 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import businessRoutes from "./modules/businesses/business.routes.js";
 import queueRoutes from "./modules/queues/queue.routes.js";
+import queueEntryRoutes from "./modules/queue-entries/queue-entry.routes.js";
+import queueOperationsRoutes from "./modules/queues/queue-operations.routes.js";
+import qrCodeRoutes from "./modules/qr-codes/qr-code.routes.js";
 
 const app = express();
 
@@ -62,6 +65,10 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
 // Authentication routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/businesses", businessRoutes);
+app.use("/api/v1/", queueRoutes);
+app.use("/api/v1", queueEntryRoutes);
+app.use("/api/v1", queueOperationsRoutes);
+app.use("/api/v1", qrCodeRoutes);
 
 // 404 handler
 app.use((_req, res) => {
