@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 const TOKEN_KEY = "queueless_access_token";
 
@@ -6,14 +7,28 @@ let accessToken: string | null = null;
 
 export const tokenManager = {
   async save(token: string): Promise<void> {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    if (Platform.OS === "web") {
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(TOKEN_KEY, token);
+      }
+    } else {
+      await SecureStore.setItemAsync(TOKEN_KEY, token);
+    }
+
     accessToken = token;
   },
 
   async get(): Promise<string | null> {
     if (accessToken) return accessToken;
 
-    accessToken = await SecureStore.getItemAsync(TOKEN_KEY);
+    if (Platform.OS === "web") {
+      if (typeof localStorage !== "undefined") {
+        accessToken = localStorage.getItem(TOKEN_KEY);
+      }
+    } else {
+      accessToken = await SecureStore.getItemAsync(TOKEN_KEY);
+    }
+
     return accessToken;
   },
 
@@ -23,6 +38,13 @@ export const tokenManager = {
 
   async clear(): Promise<void> {
     accessToken = null;
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+
+    if (Platform.OS === "web") {
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem(TOKEN_KEY);
+      }
+    } else {
+      await SecureStore.deleteItemAsync(TOKEN_KEY);
+    }
   },
 };

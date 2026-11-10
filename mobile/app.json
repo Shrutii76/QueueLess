@@ -1,4 +1,3 @@
-
 {
   "expo": {
     "name": "mobile",
@@ -40,7 +39,10 @@
         {
           "cameraPermission": "Allow QueueLess to access your camera to scan business QR codes."
         }
-      ]
+      ],
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
